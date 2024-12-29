@@ -8,11 +8,37 @@ import java.io.File
 val makeDeviceAdminPatch = resourcePatch(
     name = "Make Device Admin App",
     description = "Modifies an app to request Device Admin privileges by adding a DeviceAdminReceiver and necessary XML.",
-    use = false,
+    use = true,
 ) {
     execute {
         val resXmlDirectory = get("res/xml")
-        
+        val resValuesDirectory = get("res/values")
+
+        // Fetch the package name and determine fallback name
+        val smaliDirectory = get("smali")
+        var fallbackAppName: String? = null
+
+        val packageName = document("AndroidManifest.xml").use { document ->
+            val manifestElement = document.documentElement
+            val pkgName = manifestElement.getAttribute("package")
+            fallbackAppName = pkgName.substringAfterLast('.')
+            pkgName
+        }
+
+        // Check if @string/app_name exists
+        val appName = File(resValuesDirectory, "strings.xml").let { stringsFile ->
+            if (stringsFile.exists()) {
+                val stringsContent = stringsFile.readText()
+                if (stringsContent.contains("name=\"app_name\"")) {
+                    "@string/app_name"
+                } else {
+                    fallbackAppName
+                }
+            } else {
+                fallbackAppName
+            }
+        } ?: fallbackAppName
+
         // Modify AndroidManifest.xml to include DeviceAdminReceiver
         document("AndroidManifest.xml").use { document ->
             val applicationNode = document.getElementsByTagName("application").item(0) as Element
@@ -20,7 +46,7 @@ val makeDeviceAdminPatch = resourcePatch(
             // Add the DeviceAdminReceiver inside the <application> tag
             val receiverNode = document.createElement("receiver")
             receiverNode.setAttribute("android:name", ".MyDeviceAdminReceiver")
-            receiverNode.setAttribute("android:label", "@string/app_name")
+            receiverNode.setAttribute("android:label", appName)
             receiverNode.setAttribute("android:permission", "android.permission.BIND_DEVICE_ADMIN")
 
             // Add meta-data tag
@@ -54,32 +80,25 @@ val makeDeviceAdminPatch = resourcePatch(
             )
         }
 
-        // Fetch package name from AndroidManifest.xml and create the smali path
-        val smaliDirectory = get("smali")
-        document("AndroidManifest.xml").use { document ->
-            val manifestElement = document.documentElement // Get the root element
-            val packageName = manifestElement.getAttribute("package")
-            
-            // Convert the package name into a path for smali
-            val packagePath = packageName.replace('.', '/')
-            val smaliFile = File(smaliDirectory, "$packagePath/MyDeviceAdminReceiver.smali")
+        // Create the smali file for DeviceAdminReceiver
+        val packagePath = packageName.replace('.', '/')
+        val smaliFile = File(smaliDirectory, "$packagePath/MyDeviceAdminReceiver.smali")
 
-            smaliFile.apply {
-                parentFile.mkdirs()
-                writeText(
-                    """
-                        .class public L${packagePath}/MyDeviceAdminReceiver;
-                        .super Landroid/app/admin/DeviceAdminReceiver;
+        smaliFile.apply {
+            parentFile.mkdirs()
+            writeText(
+                """
+                    .class public L${packagePath}/MyDeviceAdminReceiver;
+                    .super Landroid/app/admin/DeviceAdminReceiver;
 
-                        .method public constructor <init>()V
-                            .locals 0
-                            .prologue
-                            invoke-direct {p0}, Landroid/app/admin/DeviceAdminReceiver;-><init>()V
-                            return-void
-                        .end method
-                    """.trimIndent(),
-                )
-            }
+                    .method public constructor <init>()V
+                        .locals 0
+                        .prologue
+                        invoke-direct {p0}, Landroid/app/admin/DeviceAdminReceiver;-><init>()V
+                        return-void
+                    .end method
+                """.trimIndent(),
+            )
         }
     }
 }
