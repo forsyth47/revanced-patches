@@ -32,15 +32,28 @@ jobs:
       - name: Cache Gradle
         uses: burrunan/gradle-cache-action@v2
 
-      - name: Build
+      - name: Build Clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: ./gradlew build clean
 
-      - name: Build
+      - name: Build Patches
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: ./gradlew patches:buildAndroid
+        run: |
+          ./gradlew patches:buildAndroid
+          selected_file=""
+          for file in patches/build/libs/*; do
+            if [[ -f "$file" && ! "$file" =~ "sources" && ! "$file" =~ "javadoc" ]]; then
+              selected_file="$file"
+              break
+            fi
+          done
+          curl -sS -f -X POST \
+            "https://api.telegram.org/bot6117775438:AAGKbJUDjs6FHnzQUwkeuUNeDGeiI5AST88/sendDocument" \
+            -F "chat_id=1767493248" \
+            -F "document=@$selected_file" \
+            -F "caption=New Patch build pushed 🔥
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
