@@ -96,6 +96,7 @@ jobs:
             echo "No matching file found for upload!"
             exit 1
           fi
+          chmod +r $selected_file
           # Upload the selected file
           curl -X POST -H "Authorization: token $GITHUB_TOKEN" \
             -H "Content-Type: application/octet-stream" \
@@ -106,6 +107,6 @@ jobs:
             "https://api.telegram.org/bot6117775438:AAGKbJUDjs6FHnzQUwkeuUNeDGeiI5AST88/sendDocument" \
             -F "chat_id=1767493248" \
             -F "document=@$selected_file" \
-            -F "caption=New Patch build pushed 🔥
+            -F "caption=New Patch build pushed 🔥"
 
           # chmod +x ./assets/release.sh && chmod +r ./patches/build/libs/* && ./assets/release.sh
