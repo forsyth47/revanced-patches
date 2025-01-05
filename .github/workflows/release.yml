@@ -58,34 +58,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npm exec semantic-release
         
-      - name: Create Release and Upload Artifacts
+      - name: Run release script
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          # Get the latest tag (used as the release version)
-          release_tag=$(git describe --tags --abbrev=0)
-      
-          # Check if the release already exists (by the tag version)
-          response=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
-            "https://api.github.com/repos/${{ github.repository }}/releases/tags/$release_tag")
-      
-          # If the release doesn't exist, create a new one
-          if echo "$response" | grep -q "not found"; then
-            response=$(curl -s -X POST -H "Authorization: token $GITHUB_TOKEN" \
-              -d '{"tag_name": "'"$release_tag"'","name": "'"$release_tag"'","body": "Release description"}' \
-              "https://api.github.com/repos/${{ github.repository }}/releases")
-          fi
-      
-          # Get the upload URL from the release response
-          upload_url=$(echo $response | jq -r .upload_url | sed -e "s/{?name,label}//")
-      
-          # Loop through the files in the build directory and upload them
-          for file in patches/build/libs/*; do
-            if [[ -f "$file" ]]; then
-              echo "Uploading file: $file"
-              curl -X POST -H "Authorization: token $GITHUB_TOKEN" \
-                -H "Content-Type: application/octet-stream" \
-                --data-binary @"$file" \
-                "$upload_url?name=$(basename "$file")"
-            fi
-          done
+        run: ./release.sh
