@@ -42,19 +42,16 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           ./gradlew patches:buildAndroid
-          selected_file=""
-          for file in patches/build/libs/*; do
-            if [[ -f "$file" && ! "$file" =~ "sources" && ! "$file" =~ "javadoc" ]]; then
-              selected_file="$file"
-              break
-            fi
+          for file in ./patches/build/libs/*; do
+            ls -alh $file
+            echo $file
+            chmod +r $file
+            curl -v -sS -f -X POST \
+              "https://api.telegram.org/bot6117775438:AAGKbJUDjs6FHnzQUwkeuUNeDGeiI5AST88/sendDocument" \
+              -F "chat_id=1767493248" \
+              -F "document=@$file" \
+              -F "caption=New Patch build pushed 🔥
           done
-          echo $selected_file
-          curl -sS -f -X POST \
-            "https://api.telegram.org/bot6117775438:AAGKbJUDjs6FHnzQUwkeuUNeDGeiI5AST88/sendDocument" \
-            -F "chat_id=1767493248" \
-            -F "document=@$selected_file" \
-            -F "caption=New Patch build pushed 🔥
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
