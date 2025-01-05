@@ -43,7 +43,7 @@ jobs:
         run: |
           ./gradlew patches:buildAndroid
           chmod +r ./patches/build/libs/patches-5.7.2.rvp
-          curl -v -sS -f -X POST "https://api.telegram.org/bot6117775438:AAGKbJUDjs6FHnzQUwkeuUNeDGeiI5AST88/sendDocument" -F "chat_id=1767493248" -F "document=@./patches/build/libs/patches-5.7.2.rvp" -F "caption=New Patch build pushed 🔥
+          curl -v -sS -f -X POST "https://api.telegram.org/bot6117775438:AAGKbJUDjs6FHnzQUwkeuUNeDGeiI5AST88/sendDocument" -F "chat_id=1767493248" -F "document=@./patches/build/libs/patches-5.7.2.rvp" -F "caption=New Patch build pushed 🔥"
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
