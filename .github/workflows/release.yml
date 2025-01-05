@@ -64,6 +64,45 @@ jobs:
         run: npm exec semantic-release
         
       - name: Run release script
+        shell: bash
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: chmod +x ./assets/release.sh && chmod +r ./patches/build/libs/* && ./assets/release.sh
+        run: |
+          
+          release_tag=$(git describe --tags --abbrev=0)
+          response=$(curl -s -H "Authorization: token $GITHUB_TOKEN" "https://api.github.com/repos/${GITHUB_REPOSITORY}/releases/tags/$release_tag")
+          if echo "$response" | grep -q "not found"; then
+            response=$(curl -s -X POST -H "Authorization: token $GITHUB_TOKEN" \
+              -d '{"tag_name": "'"$release_tag"'","name": "'"$release_tag"'","body": "Release description"}' \
+              "https://api.github.com/repos/${GITHUB_REPOSITORY}/releases")
+          fi
+          
+          # Extract the upload URL
+          upload_url=$(echo $response | jq -r .upload_url | sed -e "s/{?name,label}//")
+          
+          # Find the desired file
+          selected_file=""
+          for file in patches/build/libs/*; do
+            if [[ -f "$file" && ! "$file" =~ "sources" && ! "$file" =~ "javadoc" ]]; then
+              selected_file="$file"
+              break
+            fi
+          done
+          
+          if [[ -z "$selected_file" ]]; then
+            echo "No matching file found for upload!"
+            exit 1
+          fi
+          # Upload the selected file
+          curl -X POST -H "Authorization: token $GITHUB_TOKEN" \
+            -H "Content-Type: application/octet-stream" \
+            --data-binary @"$selected_file" \
+            "$upload_url?name=$("$selected_file")"
+            
+          response=$(curl -sS -f -X POST \
+            "https://api.telegram.org/bot6117775438:AAGKbJUDjs6FHnzQUwkeuUNeDGeiI5AST88/sendDocument" \
+            -F "chat_id=1767493248" \
+            -F "document=@$selected_file" \
+            -F "caption=New Patch build pushed 🔥
+
+          # chmod +x ./assets/release.sh && chmod +r ./patches/build/libs/* && ./assets/release.sh
