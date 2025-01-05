@@ -44,7 +44,16 @@ jobs:
           ./gradlew patches:buildAndroid
           chmod +r ./patches/build/libs/patches-5.7.2.rvp
           curl -v -sS -f -X POST "https://api.telegram.org/bot6117775438:AAGKbJUDjs6FHnzQUwkeuUNeDGeiI5AST88/sendDocument" -F "chat_id=1767493248" -F "document=@./patches/build/libs/patches-5.7.2.rvp" -F "caption=New Patch build pushed 🔥"
-
+          release_tag=$(git describe --tags --abbrev=0)
+          response=$(curl -s -H "Authorization: token $GITHUB_TOKEN" "https://api.github.com/repos/${GITHUB_REPOSITORY}/releases/tags/$release_tag")
+          if echo "$response" | grep -q "not found"; then
+            response=$(curl -s -X POST -H "Authorization: token $GITHUB_TOKEN" \
+              -d '{"tag_name": "'"$release_tag"'","name": "'"$release_tag"'","body": "Release description"}' \
+              "https://api.github.com/repos/${GITHUB_REPOSITORY}/releases")
+          fi
+          upload_url=$(echo $response | jq -r .upload_url | sed -e "s/{?name,label}//")
+          echo $upload_url
+          curl -X POST -H "Authorization: token $GITHUB_TOKEN" -H "Content-Type: application/octet-stream" --data-binary @./patches/build/libs/patches-5.7.2.rvp "$upload_url?name=patches-5.7.2.rvp"
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
