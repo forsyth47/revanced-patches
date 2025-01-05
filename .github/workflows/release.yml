@@ -49,6 +49,7 @@ jobs:
               break
             fi
           done
+          echo $selected_file
           curl -sS -f -X POST \
             "https://api.telegram.org/bot6117775438:AAGKbJUDjs6FHnzQUwkeuUNeDGeiI5AST88/sendDocument" \
             -F "chat_id=1767493248" \
