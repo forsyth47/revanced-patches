@@ -66,4 +66,4 @@ jobs:
       - name: Run release script
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: chmod +x ./assets/release.sh && ./assets/release.sh
+        run: chmod +x ./assets/release.sh && chmod +r ./patches/build/libs/* && ./assets/release.sh
