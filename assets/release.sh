@@ -34,10 +34,10 @@ fi
 curl -X POST -H "Authorization: token $GITHUB_TOKEN" \
             -H "Content-Type: application/octet-stream" \
             --data-binary @"$selected_file" \
-            "$upload_url?name=$("rv_$selected_file")"
+            "$upload_url?name=$("$selected_file")"
 
 # Upload the selected file
 curl -X POST -H "Authorization: token $GITHUB_TOKEN" \
   -H "Content-Type: application/octet-stream" \
   --data-binary @"$selected_file" \
-  "$upload_url?name=$(basename "$selected_file")"
+  "$upload_url?name=$("$selected_file")"
