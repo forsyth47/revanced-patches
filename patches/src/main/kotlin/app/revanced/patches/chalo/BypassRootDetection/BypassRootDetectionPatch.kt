@@ -9,7 +9,7 @@ val disableRootDetectionPatch = resourcePatch(
     description = "Modifies the isRooted() method in the Smali file to always return false.",
     use = true,
 ) {
-    compatibleWith("com.instagram.android")
+    compatibleWith("app.zophop")
     
     execute {
         val smaliDirectory = get("smali_classes6")
